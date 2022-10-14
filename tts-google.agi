@@ -1,0 +1,65 @@
+#!/usr/bin/python3
+
+DEBUG = False
+API_KEY = "CHANGE HERE"
+
+import requests
+import json
+import base64
+import sys
+from os import path, remove
+from time import sleep
+from asterisk.agi import AGI
+
+##### Start AGI connector
+agi = AGI()
+callerId = agi.env["agi_callerid"]
+uniqueId = agi.env["agi_uniqueid"]
+
+##### Read command line arguments
+lang = sys.argv[1]
+gender = sys.argv[2]
+text_to_be_spoken = " ".join(sys.argv[3:]) # the text should be the last argument always
+
+temp_file = f"/tmp/{uniqueId}_{callerId}"
+google_tts_file = f"{temp_file}_tts.wav"
+
+if DEBUG:
+    agi.verbose(
+        f'Starting Google Cloud Text to Speech for {uniqueId} on language {lang}, text="{text_to_be_spoken}"'
+    )
+
+url = "https://texttospeech.googleapis.com/v1beta1/text:synthesize"
+data = {
+        "input": {"text": text_to_be_spoken},
+        "voice": {"languageCode": lang, "ssmlGender": gender},
+        "audioConfig": {"audioEncoding": "LINEAR16", "sampleRateHertz": 8000}
+      };
+headers = {"content-type": "application/json", "X-Goog-Api-Key": API_KEY }
+
+r = requests.post(url=url, json=data, headers=headers)
+response = json.loads(r.content)
+
+# The response's audio_content is binary.
+with open(google_tts_file, "wb") as out:
+    # Write the response to the output file.
+    out.write(base64.b64decode(response["audioContent"]))
+    if DEBUG:
+        agi.verbose(f'Audio content written to file "{google_tts_file}"')
+
+if DEBUG:
+    agi.verbose(f"Playback result from Google Cloud Text to Speech  for {uniqueId}")
+
+while not path.exists(google_tts_file):
+    if DEBUG:
+        agi.verbose(f"waiting tts file  for {uniqueId}")
+    sleep(1)
+
+agi.stream_file(path.splitext(google_tts_file)[0])
+
+# remove files
+if DEBUG:
+    agi.verbose(f"Removing text to speech files for {uniqueId}")
+
+for to_be_removed in [google_tts_file]:
+    remove(to_be_removed)
