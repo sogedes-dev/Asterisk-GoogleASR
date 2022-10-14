@@ -10,8 +10,8 @@ Install dependencies on your Asterisk machine
 - pip install pyst2
 - pip install google-cloud-speech
 - pip install numpy
-- copy streaming.eagi under /var/lib/asterisk/agi-bin/ 
-- chmod +x streaming.eagi
+- copy streaming-asr-google.eagi under /var/lib/asterisk/agi-bin/ 
+- chmod +x streaming-asr-google.eagi
 - put the credentials.json file from Google Cloud under /var/lib/asterisk/agi-bin/google-cloud-credentials.json
 ```
 
@@ -27,7 +27,7 @@ Example using Asterisk dialplan, where the default model is used, en-US is the m
 
 ```
 exten => 1234,1,Answer()   
-exten => 1234,n,eagi(streaming.eagi,default,en-US,de-DE,pt-BR)   
+exten => 1234,n,eagi(streaming-asr-google.eagi,default,en-US,de-DE,pt-BR)   
 exten => 1234,n,Verbose(1,The text you just said is: ${TRANSCRIPT})   
 exten => 1234,n,Hangup()   
 
@@ -36,7 +36,7 @@ exten => 1234,n,Hangup()
 ASR Streaming example: https://cloud.google.com/speech-to-text/docs/streaming-recognize 
 
 
-### EXTRA - Google Text to Speech -- with python AGI script
+### EXTRA - Google Text to Speech with python AGI script
 
 
 Install dependencies on your Asterisk machine
